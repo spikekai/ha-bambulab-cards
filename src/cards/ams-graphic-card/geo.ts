@@ -1,13 +1,14 @@
 /*
- * AMS Graphic Card —— 几何常量与工具函数
+ * AMS Graphic Card — geometry constants and helpers
  *
- * 坐标系：1× 设计单位，画布 700 × 360（与 src/images/*.png 的实际分辨率一致）。
- * 各机型的各层素材都按同一画布对齐，因此所有坐标可以直接写在几何表里。
+ * Coordinate system: 1x design units on a 700 x 360 canvas (matching the actual resolution of
+ * src/images/*.png). Every layer of every model is aligned to that same canvas, so all the
+ * coordinates can be written straight into the geometry table.
  */
 
-export const LABEL_FONT = 20; // 材料标签字号
-export const PCT_FONT = 21; // 余量百分比字号
-export const EMPTY_LABEL = "空"; // 空盘位标签文字（仅在 show_empty_label 开启时绘制）
+export const LABEL_FONT = 20; // filament label font size
+export const PCT_FONT = 21; // remaining-percentage font size
+export const EMPTY_LABEL = "Empty"; // text drawn on an empty slot (only when show_empty_label is on)
 
 export const FONT_STACK =
   'var(--ha-font-family-body, "Segoe UI", Roboto, "Helvetica Neue", "Microsoft YaHei", sans-serif)';
@@ -31,24 +32,24 @@ export interface LcdField {
 
 export interface VariantGeo {
   name: string;
-  base: string; // BASE_IMAGES 的键
-  brand?: string; // BRAND_IMAGES 的键；有值才叠加丝印层
-  mech?: boolean; // 是否叠加机构层
-  centers: number[]; // 料盘中心 x（相对 viewBox 左边缘）
-  spW: number; // 料盘宽
-  spH: number; // 料盘高
-  spY: number; // 料盘顶
-  flangeFrac: number; // 轮缘宽 / 料盘宽
-  bandCY: number; // 材料带中心 y
-  matCap: number; // 材料带最大占比
-  labelY: number; // 材料标签行 y
-  fade: "a2p" | "none"; // 料盘下半段渐隐（AMS / AMS 2 PRO），或不做渐隐
+  base: string; // key into BASE_IMAGES
+  brand?: string; // key into BRAND_IMAGES; the silkscreen layer is drawn only when set
+  mech?: boolean; // whether to draw the mechanism layer
+  centers: number[]; // spool centre x (relative to the left edge of the viewBox)
+  spW: number; // spool width
+  spH: number; // spool height
+  spY: number; // spool top
+  flangeFrac: number; // flange width / spool width
+  bandCY: number; // filament band centre y
+  matCap: number; // max fraction of the spool the filament band may fill
+  labelY: number; // y of the label row
+  fade: "a2p" | "none"; // fade the lower half of the spool (AMS / AMS 2 PRO), or no fade
   vb: [number, number, number, number];
-  lcd?: boolean; // 是否有可实时绘制的面板
-  clipY?: number; // 料盘在此 y 以下被完全遮挡
-  chipMaxY?: number; // 余量标签的 y 上限（避免落进遮挡区）
-  bandTop?: number; // 「底图置顶」条带的上下沿（例如银色卡扣/罩子交界处）
-  bandBot?: number;
+  lcd?: boolean; // whether the model has a panel that can be drawn from live values
+  clipY?: number; // the spool is fully occluded below this y
+  chipMaxY?: number; // upper bound for the remaining-percentage chip (keeps it out of the occluded area)
+  bandTop?: number; // top edge of the strip where the base image is re-drawn on top of the spool
+  bandBot?: number; // bottom edge of that strip (e.g. the silver buckle on AMS HT)
   lcdFields?: LcdField[];
   lcdLabelY?: number;
   lcdValueY?: number;
@@ -59,7 +60,8 @@ export interface VariantGeo {
 
 const VB_DEFAULT: [number, number, number, number] = [0, 0, 700, 360];
 
-/* AMS / AMS 2 PRO 共用同一套几何（料盘位置一致），差别只在底图 / 丝印层 */
+/* AMS and AMS 2 PRO share one set of geometry (identical spool positions); they differ only
+   in the base image and the silkscreen layer */
 const AMS_LIKE: Pick<
   VariantGeo,
   "centers" | "spW" | "spH" | "spY" | "flangeFrac" | "bandCY" | "matCap" | "labelY" | "fade" | "vb" | "mech"
@@ -85,7 +87,7 @@ export const VARIANTS: { [key: string]: VariantGeo } = {
     ...AMS_LIKE,
   },
   ams: {
-    /* 官方 ams.png 是 AMS v1 机身；本卡按要求使用「AMS 2 机身 + AMS 标签」的底图 */
+    /* The shipped ams.png is the AMS v1 body; this card uses an "AMS 2 body + AMS label" base */
     name: "AMS",
     base: "amsAlt",
     brand: "ams",
@@ -103,19 +105,20 @@ export const VARIANTS: { [key: string]: VariantGeo } = {
     matCap: 0.9,
     labelY: 265,
     fade: "none",
-    /* 视窗比画布大：整体等比放大后，料盘绘制高与 AMS / AMS 2 PRO 一致
-       （面板较窄，两侧留白是几何必然，不是裁切） */
+    /* The viewBox is larger than the canvas so that, after uniform scaling, the spool is drawn
+       at the same height as on AMS / AMS 2 PRO. The side margins follow from the narrower panel
+       rather than from cropping. */
     vb: [237.96, -30.1, 223.1, 419.7],
     lcd: true,
-    /* 料盘下半段过了罩子/银色卡扣 → 完全遮挡 */
+    /* Past the cover / silver buckle the lower part of the spool is fully occluded */
     clipY: 168,
     chipMaxY: 152,
-    /* 把底图的这一条带重新画到料盘之上，恢复被料盘挡住的卡扣 */
+    /* Re-draw this strip of the base image above the spool, restoring the buckle it covered */
     bandTop: 163,
     bandBot: 184,
     lcdFields: [
-      { key: "hum", label: "湿度", x: 85.04, lx: 85.04 },
-      { key: "temp", label: "温度", x: 141.04, lx: 141.04 },
+      { key: "hum", label: "Humidity", x: 85.04, lx: 85.04 },
+      { key: "temp", label: "Temperature", x: 141.04, lx: 141.04 },
     ],
     lcdLabelY: 205,
     lcdValueY: 224,
@@ -139,7 +142,7 @@ export const VARIANTS: { [key: string]: VariantGeo } = {
   },
 };
 
-/* 料盘竖直方向透明度：上半段全显，下半段渐隐进底图的暗腔 */
+/* Vertical opacity of the spool: fully visible on top, fading into the dark housing below */
 export const FADE_STOPS: [number, number][] = [
   [0.0, 1.0],
   [140 / 360, 1.0],
@@ -151,7 +154,7 @@ export const FADE_STOPS: [number, number][] = [
   [1.0, 0.0],
 ];
 
-/* 由设备型号字符串判定使用哪套几何 */
+/* Pick the geometry table from the device model string */
 export function variantFromModel(model: string): string {
   const m = String(model || "").toLowerCase();
   if (m.includes("lite")) return "lite";
@@ -167,7 +170,7 @@ export function isBlankColor(c: any): boolean {
   return s === "" || s === "00000000" || s === "000000" || s === "none" || s === "nil";
 }
 
-/* 材料带高度百分比：空盘位给一个很小的值，满料/未知给 95% */
+/* Filament band height: a tiny value for an empty slot, 95% for full or unknown */
 export function remainPct(slot: Slot): number {
   if (slot.empty) return 20;
   const r = slot.remain;
@@ -188,8 +191,9 @@ const _mcv = document.createElement("canvas");
 const _mctx = _mcv.getContext("2d") as CanvasRenderingContext2D;
 let _fontFam = "";
 
-/* 量文字宽度时必须用 HA 实际渲染的字体（SVG 里 text 用的是 --ha-font-family-body），
-   否则量出的宽度偏窄，"100%" 会顶出黑框 */
+/* Text width must be measured with the font HA actually renders (the SVG text uses
+   --ha-font-family-body); otherwise the measurement comes out too narrow and "100%" overflows
+   the frame */
 export function fontFamily(): string {
   if (_fontFam) return _fontFam;
   let f = "";
@@ -210,7 +214,7 @@ export function measureText(text: any, size: number, weight?: number): number {
   return w > 0 ? w : t.length * size * 0.62;
 }
 
-/* 标签底框宽度：量出的宽度 + 余量，并保证不小于「按字符数估算」的下限 */
+/* Label frame width: measured width plus padding, never below the character-count estimate */
 export function chipWidth(text: any, size: number, extra?: number, perChar?: number): number {
   const t = String(text);
   const w = measureText(t, size);

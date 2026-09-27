@@ -5,7 +5,8 @@ import memoizeOne from "memoize-one";
 import { AMS_MODELS, MANUFACTURER } from "../../const";
 import { AMS_GRAPHIC_CARD_EDITOR_NAME } from "./const";
 
-/* AMS Lite 的卡面尚未支持，先从设备选择器里排除，避免选中后只看到提示 */
+/* AMS Lite has no body art yet, so it is filtered out of the device picker rather than
+   showing a notice once it is selected */
 const AMS_FILTER = AMS_MODELS.filter((m) => m !== "AMS Lite").map((model) => ({
   manufacturer: MANUFACTURER,
   model,

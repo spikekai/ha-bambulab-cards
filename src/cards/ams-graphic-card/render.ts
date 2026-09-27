@@ -1,9 +1,10 @@
 /*
- * AMS Graphic Card —— SVG 渲染
+ * AMS Graphic Card — SVG rendering
  *
- * 生成整段 SVG 字符串，由卡片通过 unsafeSVG 注入 shadow DOM。
- * 之所以用「字符串 + unsafeSVG」而不是把每个元素写成 lit 模板：本卡的图层顺序、
- * 裁剪路径、渐隐蒙版依赖精确的 z-order 与 userSpaceOnUse 坐标，字符串方式最直观也最易核对。
+ * Produces the whole SVG as a string, which the card injects into the shadow DOM through
+ * unsafeSVG. A single string is used instead of a lit template per element because the layer
+ * order, clip paths and fade mask depend on exact z-order and userSpaceOnUse coordinates —
+ * the string form is the easiest to read and to verify.
  */
 import { BASE_IMAGES, BRAND_IMAGES, MECH_IMAGE } from "./assets";
 import {
@@ -30,7 +31,7 @@ function gradientStops(): string {
   }).join("");
 }
 
-/* 单个料盘：轮缘 → 材料带（含条纹）→ 余量百分比标签 */
+/* A single spool: flange -> filament band (with hatching) -> remaining-percentage chip */
 function spoolSvg(cx: number, s: Slot, geo: VariantGeo): string {
   const { spW, spH, spY, flangeFrac, bandCY, matCap } = geo;
   const x0 = cx - spW / 2;
@@ -68,7 +69,7 @@ function spoolSvg(cx: number, s: Slot, geo: VariantGeo): string {
   return o;
 }
 
-/* 材料标签（可点击 → 打开耗材弹窗）。空盘位默认整块隐藏。 */
+/* Filament label (clickable, opens the filament popup). Hidden entirely on empty slots by default. */
 function labelsSvg(
   slots: Slot[],
   trayEntities: string[],
@@ -95,7 +96,7 @@ function labelsSvg(
   return o;
 }
 
-/* AMS HT 面板：按实时传感器绘制（底图上烘焙死的数字已被擦除） */
+/* AMS HT panel: drawn from live sensors (the digits baked into the base image were erased) */
 function lcdSvg(geo: VariantGeo, hum: string, temp: string): string {
   const vx = geo.vb[0];
   let o = "";
@@ -125,7 +126,7 @@ export function renderSvg(o: RenderOpts): string {
 
   let svg =
     `<svg class="art" viewBox="${vbx} ${vby} ${vbw} ${vbh}" preserveAspectRatio="xMidYMid meet"` +
-    ` xmlns="${SVG_NS}" aria-label="${esc(geo.name)} 料盘状态">`;
+    ` xmlns="${SVG_NS}" aria-label="${esc(geo.name)} spool status">`;
 
   svg += "<defs>";
   svg +=
@@ -144,10 +145,10 @@ export function renderSvg(o: RenderOpts): string {
   }
   svg += "</defs>";
 
-  /* ① 底图 */
+  /* (1) base image */
   svg += `<image href="${esc(baseSrc)}" x="0" y="0" width="${IMG_W}" height="${IMG_H}" preserveAspectRatio="none"/>`;
 
-  /* ② 料盘（按机型套渐隐蒙版 / 遮挡裁剪） */
+  /* (2) spools (fade mask or occlusion clip, depending on the model) */
   if (geo.fade === "a2p") svg += '<g mask="url(#a2p-mask)">';
   else if (geo.clipY != null) svg += '<g clip-path="url(#a2p-clip)">';
   else svg += "<g>";
@@ -156,7 +157,8 @@ export function renderSvg(o: RenderOpts): string {
   });
   svg += "</g>";
 
-  /* ③ 把底图的某一条带重新画到料盘之上（例如 AMS HT 的银色卡扣），恢复被料盘盖住的细节 */
+  /* (3) re-draw a strip of the base image above the spools (e.g. the AMS HT silver buckle)
+     to restore details the spools covered */
   if (geo.bandTop != null && geo.bandBot != null) {
     svg +=
       '<clipPath id="a2p-band" clipPathUnits="userSpaceOnUse">' +
@@ -166,7 +168,7 @@ export function renderSvg(o: RenderOpts): string {
       ' preserveAspectRatio="none" clip-path="url(#a2p-band)" style="pointer-events:none"/>';
   }
 
-  /* ④ 机构层 + 丝印层（置顶，避免被料盘盖住） */
+  /* (4) mechanism layer + silkscreen layer (drawn on top so a spool never covers them) */
   if (geo.mech) {
     svg += `<image href="${esc(MECH_IMAGE)}" x="0" y="0" width="${IMG_W}" height="${IMG_H}" preserveAspectRatio="none" style="pointer-events:none"/>`;
   }
@@ -174,7 +176,7 @@ export function renderSvg(o: RenderOpts): string {
     svg += `<image href="${esc(BRAND_IMAGES[geo.brand])}" x="0" y="0" width="${IMG_W}" height="${IMG_H}" preserveAspectRatio="none" style="pointer-events:none"/>`;
   }
 
-  /* ⑤ 材料标签 + 面板 */
+  /* (5) filament labels + panel */
   if (o.showLabels) svg += labelsSvg(slots, trayEntities, geo, o.showEmptyLabel, o.labelMode);
   if (geo.lcd) svg += lcdSvg(geo, o.hum, o.temp);
 

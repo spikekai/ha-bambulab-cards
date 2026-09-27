@@ -22,7 +22,8 @@ export default css`
     padding: 10px 14px 0;
   }
 
-  /* AMS HT 面板较窄，温湿度居中更好看；AMS / AMS 2 PRO 保持「名称左、温湿度右」 */
+  /* The AMS HT panel is narrow, so centring the values reads better; AMS / AMS 2 PRO keep the
+     title on the left and the values on the right */
   .head.center {
     justify-content: center;
   }
@@ -55,7 +56,8 @@ export default css`
     display: block;
   }
 
-  /* 高度被网格锁定时用 flex 撑满；未锁定时退化为 viewBox 的自然高度 */
+  /* Fill the row with flex when the grid fixes the height; otherwise fall back to the natural
+     viewBox height */
   .art {
     display: block;
     width: 100%;

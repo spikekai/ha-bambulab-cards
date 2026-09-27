@@ -1,18 +1,20 @@
 /*
- * AMS Graphic Card —— 素材
+ * AMS Graphic Card — assets
  *
- * rollup-plugin-img 会把这里的图片输出到 dist/images/，import 得到的是 URL 字符串。
+ * rollup-plugin-img emits these images into dist/images/; the import yields a URL string.
  *
- * 复用官方已有素材（`src/images/` 里本来就有）：
- *   - ams.png / ams2.png / amsht.png 三种机型的空仓底图
+ * Reused from the repo (`src/images/` already ships them):
+ *   - ams.png / ams2.png / amsht.png — empty-housing base image per model
  *
- * 本卡新增素材（官方没有，原因见 docs/cards/ams-graphic-card.md）：
- *   - ams-alt.png      AMS 底图：官方 ams.png 是 **AMS v1 机身**（轮廓比 AMS 2 宽），
- *                      而本卡需要一个「AMS 2 机身 + AMS 标签」的版本，因此单独提供
- *   - amsht-clean.png  AMS HT 底图：面板上原本烘焙着固定的温湿度/时间数字，
- *                      这里已擦除，改由卡片按实时传感器绘制（否则永远显示同一组假数据）
- *   - ams2pro-mech.png  机构层：把料盘压在玻璃/罩子之后的遮挡关系
- *   - *-brand.png       丝印层：单独置顶，避免被料盘盖住
+ * Added by this card (not in the repo — see the PR description for the reasoning):
+ *   - ams-alt.png      AMS base: the shipped ams.png is the **AMS v1 body** (wider outline than
+ *                      the AMS 2), while this card is built around an "AMS 2 body + AMS label"
+ *                      version, so it is shipped separately
+ *   - amsht-clean.png  AMS HT base: the shipped image has fixed humidity / temperature / time
+ *                      digits baked into the panel. They are erased here so the card can draw
+ *                      live sensor values instead (otherwise the same fake numbers never change)
+ *   - ams2pro-mech.png mechanism layer: puts the spool behind the glass / cover
+ *   - *-brand.png      silkscreen layer: drawn on top so the logo is never covered by a spool
  */
 import AMSImage from "../../images/ams.png";
 import AMS2Image from "../../images/ams2.png";

@@ -66,7 +66,8 @@ export class AmsGraphicCard extends LitElement {
   public set hass(hass: any) {
     const firstTime = hass && !this._hass;
     this._hass = hass;
-    /* «MOCK» 用于卡片选择器的预览：自动挑一台 AMS 设备，这样缩略图就是真实卡面 */
+    /* "MOCK" is used by the card-picker preview: auto-select an AMS device so the thumbnail
+       shows a real card instead of an empty one */
     if (firstTime && this._config && this._config.ams === "MOCK") {
       const pick = this._pickMockDevice();
       if (pick) this._config = { ...this._config, ams: pick };
@@ -77,7 +78,8 @@ export class AmsGraphicCard extends LitElement {
     return 4 + (this._config?.show_info_bar === false ? 0 : 1);
   }
 
-  /* 与集成自带 AMS 卡的图形模式保持一致：4 行（+ 信息栏 1 行），AMS HT 只占 1 列 */
+  /* Match the graphic style of the integration's own AMS card: 4 rows (plus 1 for the info
+     bar), with AMS HT spanning a single column */
   public getLayoutOptions() {
     const rows = this.getCardSize();
     const columns = this._resolve().variantKey === "ht" ? 1 : 4;
@@ -98,7 +100,7 @@ export class AmsGraphicCard extends LitElement {
     return { ams: "MOCK" };
   }
 
-  /* ---------- 实体解析 ---------- */
+  /* ---------- entity resolution ---------- */
 
   private _pickMockDevice(): string {
     const devices = this._hass?.devices || {};
@@ -194,7 +196,7 @@ export class AmsGraphicCard extends LitElement {
     };
   }
 
-  /* ---------- 渲染 ---------- */
+  /* ---------- rendering ---------- */
 
   private _stateValue(e: string): string {
     const st = e && this._hass ? this._hass.states[e] : null;
@@ -234,13 +236,13 @@ export class AmsGraphicCard extends LitElement {
     if (r.geo.unsupported) {
       return html`<ha-card>
         <div class="notice">
-          暂不支持 ${r.geo.name}（支持 AMS / AMS 2 PRO / AMS HT）
+          ${r.geo.name} is not supported yet — supported models: AMS / AMS 2 PRO / AMS HT.
         </div>
       </ha-card>`;
     }
     if (!r.trays.length) {
       return html`<ha-card>
-        <div class="notice">请在卡片编辑器中选择 AMS 设备</div>
+        <div class="notice">Select an AMS in the card editor.</div>
       </ha-card>`;
     }
 
@@ -270,7 +272,8 @@ export class AmsGraphicCard extends LitElement {
     });
   }
 
-  /* 点击材料标签 → 打开集成的耗材弹窗；集成未加载时退回 HA 原生 more-info */
+  /* Clicking a filament label opens the integration's filament popup; when the integration
+     is not loaded it falls back to the native more-info dialog */
   private _openFilamentPopup(entityId: string): void {
     if (!entityId) return;
     if (customElements.get("ams-popup")) {
